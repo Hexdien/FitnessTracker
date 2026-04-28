@@ -2,6 +2,9 @@
 .venv/
 venv/
 
+# IA environment 
+.codex
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.pyc
