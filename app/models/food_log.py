@@ -1,5 +1,7 @@
-from sqlalchemy import Column, Integer, Numeric, ForeignKey, DateTime
-from datetime import datetime
+from datetime import datetime, timezone
+
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, Numeric
+
 from app.database.db import Base
 
 
@@ -17,5 +19,8 @@ class FoodLog(Base):
     protein = Column(Numeric, nullable=False)
     lipids = Column(Numeric, nullable=False)
 
-    created_at =  Column(DateTime, default=datetime.utcnow, nullable=False)
-
+    created_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
