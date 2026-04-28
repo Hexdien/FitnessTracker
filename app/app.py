@@ -1,4 +1,6 @@
 from flask import Flask
+from werkzeug.exceptions import HTTPException
+
 from app.database.db import Base, engine
 from app.routes.food import food_bp
 
@@ -10,6 +12,14 @@ def create_app():
     app = Flask(__name__)
 
     app.register_blueprint(food_bp)
+
+    @app.errorhandler(HTTPException)
+    def handle_http_exception(error):
+        return {"error": error.description}, error.code
+
+    @app.errorhandler(Exception)
+    def handle_unexpected_exception(_error):
+        return {"error": "Erro interno da aplicação"}, 500
 
     # Tabelas temporárias
     # Utilizar migrations posteriormente
