@@ -5,6 +5,8 @@ venv/
 # IA environment 
 .codex
 
+# Test/Databases
+*.db
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.pyc
