@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, render_template
 from werkzeug.exceptions import HTTPException
 
 from app.database.db import Base, engine
@@ -27,6 +27,6 @@ def create_app():
 
     @app.route("/")
     def home():
-        return {"message": "API online"}
+        return render_template("index.html")
 
     return app
