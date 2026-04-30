@@ -4,12 +4,15 @@ from decimal import Decimal, InvalidOperation
 from flask import Blueprint, jsonify, request
 
 from app.database.deps import get_db
-from app.models import food
 from app.services.food_service import (
     create_food,
     create_food_log,
+    delete_food,
+    delete_food_log,
     list_food_logs_by_date,
     list_foods,
+    update_food,
+    update_food_log,
 )
 
 food_bp = Blueprint("food", __name__)
@@ -121,6 +124,45 @@ def _serialize_food_log(food_log, food_name=None):
     }
 
 
+def _parse_food_fields(data, partial):
+    fields = {}
+
+    if "name" in data:
+        fields["name"] = _parse_required_string(data, "name")
+    elif not partial:
+        raise ValueError("name é obrigatório")
+
+    for field_name in ("calories", "carbs", "protein", "lipids"):
+        if field_name in data:
+            fields[field_name] = _parse_positive_decimal(data, field_name)
+        elif not partial:
+            raise ValueError(f"{field_name} é obrigatório")
+
+    if partial and not fields:
+        raise ValueError("Informe ao menos um campo para atualização")
+
+    return fields
+
+
+def _parse_food_log_fields(data, partial):
+    fields = {}
+
+    if "food_id" in data:
+        fields["food_id"] = _parse_positive_int(data, "food_id")
+    elif not partial:
+        raise ValueError("food_id é obrigatório")
+
+    if "quantity" in data:
+        fields["quantity"] = _parse_positive_decimal(data, "quantity")
+    elif not partial:
+        raise ValueError("quantity é obrigatório")
+
+    if partial and not fields:
+        raise ValueError("Informe ao menos um campo para atualização")
+
+    return fields
+
+
 @food_bp.route("/food", methods=["GET"])
 def list_foods_route():
     try:
@@ -136,21 +178,67 @@ def list_foods_route():
 def create_food_route():
     try:
         data = _parse_json_object()
-
-        name = _parse_required_string(data, "name")
-        calories = _parse_positive_decimal(data, "calories")
-        carbs = _parse_positive_decimal(data, "carbs")
-        protein = _parse_positive_decimal(data, "protein")
-        lipids = _parse_positive_decimal(data, "lipids")
+        fields = _parse_food_fields(data, partial=False)
 
         with get_db() as db:
-            food = create_food(db, name, calories, carbs, protein, lipids)
+            food = create_food(db, **fields)
+            response_payload = _serialize_food(food)
 
-        return jsonify(_serialize_food(food)), 201
+        return jsonify(response_payload), 201
     except (ValueError, TypeError) as error:
         return _error_response(str(error), 400)
     except Exception:
         return _error_response("Não foi possível criar o alimento", 422)
+
+
+@food_bp.route("/food/<int:food_id>", methods=["PUT"])
+def replace_food_route(food_id):
+    try:
+        data = _parse_json_object()
+        fields = _parse_food_fields(data, partial=False)
+
+        with get_db() as db:
+            food = update_food(db, food_id, fields)
+            response_payload = _serialize_food(food)
+
+        return jsonify(response_payload), 200
+    except (ValueError, TypeError) as error:
+        status_code = 404 if "não encontrado" in str(error).lower() else 400
+        return _error_response(str(error), status_code)
+    except Exception:
+        return _error_response("Não foi possível atualizar o alimento", 422)
+
+
+@food_bp.route("/food/<int:food_id>", methods=["PATCH"])
+def update_food_route(food_id):
+    try:
+        data = _parse_json_object()
+        fields = _parse_food_fields(data, partial=True)
+
+        with get_db() as db:
+            food = update_food(db, food_id, fields)
+            response_payload = _serialize_food(food)
+
+        return jsonify(response_payload), 200
+    except (ValueError, TypeError) as error:
+        status_code = 404 if "não encontrado" in str(error).lower() else 400
+        return _error_response(str(error), status_code)
+    except Exception:
+        return _error_response("Não foi possível atualizar o alimento", 422)
+
+
+@food_bp.route("/food/<int:food_id>", methods=["DELETE"])
+def delete_food_route(food_id):
+    try:
+        with get_db() as db:
+            delete_food(db, food_id)
+
+        return "", 204
+    except ValueError as error:
+        status_code = 404 if "não encontrado" in str(error).lower() else 400
+        return _error_response(str(error), status_code)
+    except Exception:
+        return _error_response("Não foi possível excluir o alimento", 422)
 
 
 @food_bp.route("/food-log", methods=["GET"])
@@ -175,16 +263,69 @@ def list_food_logs_route():
 def create_food_log_route():
     try:
         data = _parse_json_object()
-
-        food_id = _parse_positive_int(data, "food_id")
-        quantity = _parse_positive_decimal(data, "quantity")
+        fields = _parse_food_log_fields(data, partial=False)
 
         with get_db() as db:
             user_id = 1
-            food_log = create_food_log(db, user_id, food_id, quantity)
+            food_log, food = create_food_log(db, user_id, **fields)
+            response_payload = _serialize_food_log(food_log, food.name)
 
-        return jsonify(_serialize_food_log(food_log)), 201
+        return jsonify(response_payload), 201
     except (ValueError, TypeError) as error:
-        return _error_response(str(error), 400)
+        status_code = 404 if "não encontrado" in str(error).lower() else 400
+        return _error_response(str(error), status_code)
     except Exception:
         return _error_response("Não foi possível processar a solicitação", 422)
+
+
+@food_bp.route("/food-log/<int:food_log_id>", methods=["PUT"])
+def replace_food_log_route(food_log_id):
+    try:
+        data = _parse_json_object()
+        fields = _parse_food_log_fields(data, partial=False)
+
+        with get_db() as db:
+            user_id = 1
+            food_log, food = update_food_log(db, user_id, food_log_id, fields)
+            response_payload = _serialize_food_log(food_log, food.name)
+
+        return jsonify(response_payload), 200
+    except (ValueError, TypeError) as error:
+        status_code = 404 if "não encontrado" in str(error).lower() else 400
+        return _error_response(str(error), status_code)
+    except Exception:
+        return _error_response("Não foi possível atualizar o registro", 422)
+
+
+@food_bp.route("/food-log/<int:food_log_id>", methods=["PATCH"])
+def update_food_log_route(food_log_id):
+    try:
+        data = _parse_json_object()
+        fields = _parse_food_log_fields(data, partial=True)
+
+        with get_db() as db:
+            user_id = 1
+            food_log, food = update_food_log(db, user_id, food_log_id, fields)
+            response_payload = _serialize_food_log(food_log, food.name)
+
+        return jsonify(response_payload), 200
+    except (ValueError, TypeError) as error:
+        status_code = 404 if "não encontrado" in str(error).lower() else 400
+        return _error_response(str(error), status_code)
+    except Exception:
+        return _error_response("Não foi possível atualizar o registro", 422)
+
+
+@food_bp.route("/food-log/<int:food_log_id>", methods=["DELETE"])
+def delete_food_log_route(food_log_id):
+    try:
+        with get_db() as db:
+            user_id = 1
+            delete_food_log(db, user_id, food_log_id)
+
+        return "", 204
+    except ValueError as error:
+        status_code = 404 if "não encontrado" in str(error).lower() else 400
+        return _error_response(str(error), status_code)
+    except Exception:
+        return _error_response("Não foi possível excluir o registro", 422)
