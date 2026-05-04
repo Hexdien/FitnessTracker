@@ -134,6 +134,26 @@ select {
   gap: 18px;
 }
 
+.page-sections {
+  display: grid;
+  gap: 26px;
+}
+
+.section-block {
+  display: grid;
+  gap: 16px;
+}
+
+.section-title h2,
+.panel-head h3 {
+  margin: 0;
+}
+
+.section-title p {
+  margin: 6px 0 0;
+  color: var(--muted);
+}
+
 .panel {
   border-radius: 28px;
   padding: 22px;
@@ -196,6 +216,11 @@ select:focus {
   display: flex;
   gap: 12px;
   margin-top: 16px;
+}
+
+.form-actions-inline {
+  margin-top: 0;
+  margin-bottom: 16px;
 }
 
 .primary-button,
@@ -314,6 +339,85 @@ tbody tr:last-child td {
   padding: 24px;
 }
 
+.execution-list,
+.workout-session-list {
+  display: grid;
+  gap: 14px;
+}
+
+.execution-card,
+.workout-session-card {
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.48);
+}
+
+.execution-head,
+.workout-session-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.sets-list {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.set-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.muscle-badge-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.muscle-badge {
+  display: inline-flex;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+}
+
+.exercise-line {
+  display: grid;
+  gap: 8px;
+  padding: 14px 0;
+  border-top: 1px solid var(--line);
+}
+
+.exercise-line:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.set-pill-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.set-pill {
+  display: inline-flex;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--line);
+  font-size: 0.84rem;
+}
+
 @media (max-width: 980px) {
   .hero,
   .dashboard {
@@ -334,11 +438,18 @@ tbody tr:last-child td {
 
   .field-grid,
   .field-grid.compact,
-  .summary-strip {
+  .summary-strip,
+  .set-row {
     grid-template-columns: 1fr;
   }
 
   .panel-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .execution-head,
+  .workout-session-head {
     flex-direction: column;
     align-items: stretch;
   }

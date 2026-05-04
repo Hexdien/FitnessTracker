@@ -1,6 +1,8 @@
 const state = {
   foods: [],
   foodLogs: [],
+  exercises: [],
+  workoutSessions: [],
 };
 
 const elements = {
@@ -28,7 +30,24 @@ const elements = {
   summaryCarbs: document.getElementById("summary-carbs"),
   summaryProtein: document.getElementById("summary-protein"),
   summaryLipids: document.getElementById("summary-lipids"),
+  exerciseForm: document.getElementById("exercise-form"),
+  exerciseName: document.getElementById("exercise-name"),
+  exerciseMuscleGroups: document.getElementById("exercise-muscle-groups"),
+  exerciseTableBody: document.getElementById("exercise-table-body"),
+  workoutDateFilter: document.getElementById("workout-date-filter"),
+  workoutSessionForm: document.getElementById("workout-session-form"),
+  addExecutionButton: document.getElementById("add-execution-button"),
+  workoutExecutionList: document.getElementById("workout-execution-list"),
+  workoutSessionList: document.getElementById("workout-session-list"),
+  executionTemplate: document.getElementById("execution-template"),
+  setTemplate: document.getElementById("set-template"),
 };
+
+function getLocalDateString() {
+  const now = new Date();
+  const offset = now.getTimezoneOffset();
+  return new Date(now.getTime() - offset * 60000).toISOString().slice(0, 10);
+}
 
 function formatNumber(value) {
   return Number(value).toLocaleString("pt-BR", {
@@ -38,7 +57,9 @@ function formatNumber(value) {
 }
 
 function formatDateTime(value) {
-  return new Date(value).toLocaleTimeString("pt-BR", {
+  return new Date(value).toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -89,10 +110,31 @@ function resetFoodLogForm() {
   elements.foodLogCancel.classList.add("hidden");
 }
 
+function resetExerciseForm() {
+  elements.exerciseForm.reset();
+}
+
+function renderFoodOptions() {
+  if (!state.foods.length) {
+    elements.foodLogFoodId.innerHTML = '<option value="">Cadastre um alimento primeiro</option>';
+    return;
+  }
+
+  const currentValue = elements.foodLogFoodId.value;
+  elements.foodLogFoodId.innerHTML = state.foods
+    .map((food) => `<option value="${food.id}">${food.name}</option>`)
+    .join("");
+
+  if (state.foods.some((food) => String(food.id) === currentValue)) {
+    elements.foodLogFoodId.value = currentValue;
+  }
+}
+
 function renderFoods() {
   if (!state.foods.length) {
-    elements.foodTableBody.innerHTML = '<tr><td colspan="6" class="empty-state">Nenhum alimento cadastrado.</td></tr>';
-    elements.foodLogFoodId.innerHTML = '<option value="">Cadastre um alimento primeiro</option>';
+    elements.foodTableBody.innerHTML =
+      '<tr><td colspan="6" class="empty-state">Nenhum alimento cadastrado.</td></tr>';
+    renderFoodOptions();
     return;
   }
 
@@ -116,19 +158,14 @@ function renderFoods() {
     )
     .join("");
 
-  const currentValue = elements.foodLogFoodId.value;
-  elements.foodLogFoodId.innerHTML = state.foods
-    .map((food) => `<option value="${food.id}">${food.name}</option>`)
-    .join("");
-  if (state.foods.some((food) => String(food.id) === currentValue)) {
-    elements.foodLogFoodId.value = currentValue;
-  }
+  renderFoodOptions();
 }
 
 function renderFoodLogs() {
   if (!state.foodLogs.length) {
-    elements.foodLogTableBody.innerHTML = '<tr><td colspan="5" class="empty-state">Nenhum registro encontrado para essa data.</td></tr>';
-    updateSummary();
+    elements.foodLogTableBody.innerHTML =
+      '<tr><td colspan="5" class="empty-state">Nenhum registro encontrado para essa data.</td></tr>';
+    updateNutritionSummary();
     return;
   }
 
@@ -136,7 +173,10 @@ function renderFoodLogs() {
     .map(
       (log) => `
         <tr>
-          <td class="mono">${formatDateTime(log.created_at)}</td>
+          <td class="mono">${new Date(log.created_at).toLocaleTimeString("pt-BR", {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}</td>
           <td>${log.food_name || "Sem nome"}</td>
           <td>${formatNumber(log.quantity)} g</td>
           <td>${formatNumber(log.calories)}</td>
@@ -151,10 +191,10 @@ function renderFoodLogs() {
     )
     .join("");
 
-  updateSummary();
+  updateNutritionSummary();
 }
 
-function updateSummary() {
+function updateNutritionSummary() {
   const totals = state.foodLogs.reduce(
     (acc, log) => {
       acc.calories += Number(log.calories);
@@ -172,15 +212,76 @@ function updateSummary() {
   elements.summaryLipids.textContent = `${formatNumber(totals.lipids)}g`;
 }
 
-async function loadFoods() {
-  state.foods = await apiRequest("/food");
-  renderFoods();
+function renderExercises() {
+  if (!state.exercises.length) {
+    elements.exerciseTableBody.innerHTML =
+      '<tr><td colspan="2" class="empty-state">Nenhum exercício cadastrado.</td></tr>';
+    renderWorkoutExecutionSelects();
+    return;
+  }
+
+  elements.exerciseTableBody.innerHTML = state.exercises
+    .map(
+      (exercise) => `
+        <tr>
+          <td>${exercise.name}</td>
+          <td>${exercise.muscle_groups.join(", ")}</td>
+        </tr>
+      `
+    )
+    .join("");
+
+  renderWorkoutExecutionSelects();
 }
 
-async function loadFoodLogs() {
-  const date = elements.logDateFilter.value;
-  state.foodLogs = await apiRequest(`/food-log?date=${encodeURIComponent(date)}`);
-  renderFoodLogs();
+function renderWorkoutSessions() {
+  if (!state.workoutSessions.length) {
+    elements.workoutSessionList.innerHTML =
+      '<div class="empty-state">Nenhuma sessão de treino encontrada para essa data.</div>';
+    return;
+  }
+
+  elements.workoutSessionList.innerHTML = state.workoutSessions
+    .map(
+      (session) => `
+        <article class="workout-session-card">
+          <div class="workout-session-head">
+            <strong>${formatDateTime(session.created_at)}</strong>
+            <span class="mono">${session.exercises.length} exercício(s)</span>
+          </div>
+          ${session.exercises
+            .map(
+              (exercise) => `
+                <div class="exercise-line">
+                  <div>
+                    <strong>${exercise.exercise_name}</strong>
+                    <div class="muscle-badge-list">
+                      ${exercise.muscle_groups
+                        .map((group) => `<span class="muscle-badge">${group}</span>`)
+                        .join("")}
+                    </div>
+                  </div>
+                  <div class="set-pill-list">
+                    ${exercise.sets
+                      .map(
+                        (setItem) => `
+                          <span class="set-pill">
+                            <strong>S${setItem.order}</strong>
+                            <span>${setItem.reps} reps</span>
+                            <span>${formatNumber(setItem.weight)} kg</span>
+                          </span>
+                        `
+                      )
+                      .join("")}
+                  </div>
+                </div>
+              `
+            )
+            .join("")}
+        </article>
+      `
+    )
+    .join("");
 }
 
 function populateFoodForm(foodId) {
@@ -213,6 +314,128 @@ function populateFoodLogForm(logId) {
   elements.foodLogCancel.classList.remove("hidden");
 }
 
+function renderWorkoutExecutionSelects() {
+  const selects = elements.workoutExecutionList.querySelectorAll(".execution-exercise-select");
+
+  selects.forEach((select) => {
+    const currentValue = select.value;
+    if (!state.exercises.length) {
+      select.innerHTML = '<option value="">Cadastre um exercício primeiro</option>';
+      return;
+    }
+
+    select.innerHTML = state.exercises
+      .map((exercise) => `<option value="${exercise.id}">${exercise.name}</option>`)
+      .join("");
+
+    if (state.exercises.some((exercise) => String(exercise.id) === currentValue)) {
+      select.value = currentValue;
+    }
+  });
+}
+
+function addSetRow(setsList, values = {}) {
+  const fragment = elements.setTemplate.content.cloneNode(true);
+  const row = fragment.querySelector(".set-row");
+  row.querySelector(".set-reps-input").value = values.reps ?? "";
+  row.querySelector(".set-weight-input").value = values.weight ?? "0";
+  setsList.appendChild(fragment);
+}
+
+function addExecutionCard(initialData = null) {
+  const fragment = elements.executionTemplate.content.cloneNode(true);
+  const card = fragment.querySelector(".execution-card");
+  const select = card.querySelector(".execution-exercise-select");
+  const setsList = card.querySelector(".sets-list");
+
+  elements.workoutExecutionList.appendChild(fragment);
+  renderWorkoutExecutionSelects();
+
+  const appendedCard = elements.workoutExecutionList.lastElementChild;
+  const appendedSelect = appendedCard.querySelector(".execution-exercise-select");
+  const appendedSetsList = appendedCard.querySelector(".sets-list");
+
+  if (initialData?.exercise_id) {
+    appendedSelect.value = String(initialData.exercise_id);
+  }
+
+  if (initialData?.sets?.length) {
+    initialData.sets.forEach((setItem) => addSetRow(appendedSetsList, setItem));
+  } else {
+    addSetRow(appendedSetsList);
+  }
+}
+
+function resetWorkoutSessionForm() {
+  elements.workoutSessionForm.reset();
+  elements.workoutExecutionList.innerHTML = "";
+  if (state.exercises.length) {
+    addExecutionCard();
+  }
+}
+
+function collectWorkoutSessionPayload() {
+  const cards = [...elements.workoutExecutionList.querySelectorAll(".execution-card")];
+  if (!cards.length) {
+    throw new Error("Adicione ao menos um exercício à sessão");
+  }
+
+  return {
+    created_at: `${elements.workoutDateFilter.value}T12:00:00+00:00`,
+    exercises: cards.map((card, executionIndex) => {
+      const select = card.querySelector(".execution-exercise-select");
+      const setRows = [...card.querySelectorAll(".set-row")];
+
+      if (!select.value) {
+        throw new Error(`Selecione o exercício da execução ${executionIndex + 1}`);
+      }
+
+      if (!setRows.length) {
+        throw new Error(`Adicione ao menos uma série na execução ${executionIndex + 1}`);
+      }
+
+      return {
+        exercise_id: Number(select.value),
+        sets: setRows.map((row, setIndex) => {
+          const reps = Number(row.querySelector(".set-reps-input").value);
+          const weight = Number(row.querySelector(".set-weight-input").value);
+
+          if (!Number.isFinite(reps) || reps <= 0) {
+            throw new Error(`Informe reps válidas na execução ${executionIndex + 1}, série ${setIndex + 1}`);
+          }
+          if (!Number.isFinite(weight) || weight < 0) {
+            throw new Error(`Informe peso válido na execução ${executionIndex + 1}, série ${setIndex + 1}`);
+          }
+
+          return { reps, weight };
+        }),
+      };
+    }),
+  };
+}
+
+async function loadFoods() {
+  state.foods = await apiRequest("/food");
+  renderFoods();
+}
+
+async function loadFoodLogs() {
+  state.foodLogs = await apiRequest(`/food-log?date=${encodeURIComponent(elements.logDateFilter.value)}`);
+  renderFoodLogs();
+}
+
+async function loadExercises() {
+  state.exercises = await apiRequest("/exercise");
+  renderExercises();
+}
+
+async function loadWorkoutSessions() {
+  state.workoutSessions = await apiRequest(
+    `/workout-session?date=${encodeURIComponent(elements.workoutDateFilter.value)}`
+  );
+  renderWorkoutSessions();
+}
+
 async function handleFoodSubmit(event) {
   event.preventDefault();
   hideStatus();
@@ -226,12 +449,10 @@ async function handleFoodSubmit(event) {
   };
 
   const foodId = elements.foodId.value;
-  const method = foodId ? "PUT" : "POST";
-  const url = foodId ? `/food/${foodId}` : "/food";
 
   try {
-    await apiRequest(url, {
-      method,
+    await apiRequest(foodId ? `/food/${foodId}` : "/food", {
+      method: foodId ? "PUT" : "POST",
       body: JSON.stringify(payload),
     });
     resetFoodForm();
@@ -252,12 +473,10 @@ async function handleFoodLogSubmit(event) {
   };
 
   const logId = elements.foodLogId.value;
-  const method = logId ? "PUT" : "POST";
-  const url = logId ? `/food-log/${logId}` : "/food-log";
 
   try {
-    await apiRequest(url, {
-      method,
+    await apiRequest(logId ? `/food-log/${logId}` : "/food-log", {
+      method: logId ? "PUT" : "POST",
       body: JSON.stringify(payload),
     });
     resetFoodLogForm();
@@ -268,37 +487,92 @@ async function handleFoodLogSubmit(event) {
   }
 }
 
-async function handleTableClick(event) {
+async function handleExerciseSubmit(event) {
+  event.preventDefault();
+  hideStatus();
+
+  const payload = {
+    name: elements.exerciseName.value.trim(),
+    muscle_groups: elements.exerciseMuscleGroups.value
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean),
+  };
+
+  try {
+    await apiRequest("/exercise", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    resetExerciseForm();
+    await loadExercises();
+    resetWorkoutSessionForm();
+    showStatus("Exercício cadastrado.");
+  } catch (error) {
+    showStatus(error.message, "error");
+  }
+}
+
+async function handleWorkoutSessionSubmit(event) {
+  event.preventDefault();
+  hideStatus();
+
+  try {
+    const payload = collectWorkoutSessionPayload();
+    await apiRequest("/workout-session", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    resetWorkoutSessionForm();
+    await loadWorkoutSessions();
+    showStatus("Sessão de treino registrada.");
+  } catch (error) {
+    showStatus(error.message, "error");
+  }
+}
+
+async function handleFoodTableClick(event) {
   const button = event.target.closest("button[data-action]");
   if (!button) {
     return;
   }
 
-  const { action, id } = button.dataset;
-  const numericId = Number(id);
+  const numericId = Number(button.dataset.id);
 
   try {
-    if (action === "edit-food") {
+    if (button.dataset.action === "edit-food") {
       populateFoodForm(numericId);
       return;
     }
 
-    if (action === "delete-food") {
+    if (button.dataset.action === "delete-food") {
       if (!window.confirm("Excluir este alimento?")) {
         return;
       }
       await apiRequest(`/food/${numericId}`, { method: "DELETE", headers: {} });
       await loadFoods();
       showStatus("Alimento excluído.");
-      return;
     }
+  } catch (error) {
+    showStatus(error.message, "error");
+  }
+}
 
-    if (action === "edit-log") {
+async function handleFoodLogTableClick(event) {
+  const button = event.target.closest("button[data-action]");
+  if (!button) {
+    return;
+  }
+
+  const numericId = Number(button.dataset.id);
+
+  try {
+    if (button.dataset.action === "edit-log") {
       populateFoodLogForm(numericId);
       return;
     }
 
-    if (action === "delete-log") {
+    if (button.dataset.action === "delete-log") {
       if (!window.confirm("Excluir este registro?")) {
         return;
       }
@@ -311,7 +585,29 @@ async function handleTableClick(event) {
   }
 }
 
-async function handleDateChange() {
+function handleWorkoutBuilderClick(event) {
+  if (event.target.closest(".execution-remove-button")) {
+    event.target.closest(".execution-card").remove();
+    return;
+  }
+
+  if (event.target.closest(".add-set-button")) {
+    const card = event.target.closest(".execution-card");
+    addSetRow(card.querySelector(".sets-list"));
+    return;
+  }
+
+  if (event.target.closest(".remove-set-button")) {
+    const row = event.target.closest(".set-row");
+    const setsList = row.parentElement;
+    row.remove();
+    if (!setsList.children.length) {
+      addSetRow(setsList);
+    }
+  }
+}
+
+async function handleNutritionDateChange() {
   hideStatus();
   try {
     resetFoodLogForm();
@@ -321,24 +617,43 @@ async function handleDateChange() {
   }
 }
 
+async function handleWorkoutDateChange() {
+  hideStatus();
+  try {
+    await loadWorkoutSessions();
+  } catch (error) {
+    showStatus(error.message, "error");
+  }
+}
+
 async function bootstrap() {
-  const now = new Date();
-  const offset = now.getTimezoneOffset();
-  const today = new Date(now.getTime() - offset * 60000).toISOString().slice(0, 10);
+  const today = getLocalDateString();
   elements.logDateFilter.value = today;
+  elements.workoutDateFilter.value = today;
 
   elements.foodForm.addEventListener("submit", handleFoodSubmit);
   elements.foodLogForm.addEventListener("submit", handleFoodLogSubmit);
+  elements.exerciseForm.addEventListener("submit", handleExerciseSubmit);
+  elements.workoutSessionForm.addEventListener("submit", handleWorkoutSessionSubmit);
+
   elements.foodReset.addEventListener("click", resetFoodForm);
   elements.foodCancel.addEventListener("click", resetFoodForm);
   elements.foodLogCancel.addEventListener("click", resetFoodLogForm);
-  elements.logDateFilter.addEventListener("change", handleDateChange);
-  elements.foodTableBody.addEventListener("click", handleTableClick);
-  elements.foodLogTableBody.addEventListener("click", handleTableClick);
+  elements.addExecutionButton.addEventListener("click", () => addExecutionCard());
+
+  elements.logDateFilter.addEventListener("change", handleNutritionDateChange);
+  elements.workoutDateFilter.addEventListener("change", handleWorkoutDateChange);
+
+  elements.foodTableBody.addEventListener("click", handleFoodTableClick);
+  elements.foodLogTableBody.addEventListener("click", handleFoodLogTableClick);
+  elements.workoutExecutionList.addEventListener("click", handleWorkoutBuilderClick);
 
   try {
     await loadFoods();
     await loadFoodLogs();
+    await loadExercises();
+    resetWorkoutSessionForm();
+    await loadWorkoutSessions();
   } catch (error) {
     showStatus(error.message, "error");
   }
