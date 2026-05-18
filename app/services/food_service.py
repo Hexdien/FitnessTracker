@@ -7,7 +7,7 @@ from app.models.food_log import FoodLog
 
 
 def _calculate_macros(food, quantity):
-    factor = float(quantity) / 100
+    factor = float(quantity) / float(food.base_quantity)
 
     return {
         "calories": float(food.calories) * factor,
@@ -40,13 +40,14 @@ def list_foods(db):
     return db.query(Food).order_by(Food.name.asc()).all()
 
 
-def create_food(db, name, calories, carbs, protein, lipids):
+def create_food(db, name, base_quantity, calories, carbs, protein, lipids):
     normalized_name = name.strip()
     if not normalized_name:
         raise ValueError("name é obrigatório")
 
     food = Food(
         name=normalized_name,
+        base_quantity=base_quantity,
         calories=calories,
         carbs=carbs,
         protein=protein,
@@ -94,6 +95,21 @@ def delete_food(db, food_id):
 def list_food_logs_by_date(db, user_id, target_date: date):
     start_at = datetime.combine(target_date, time.min, tzinfo=timezone.utc)
     end_at = start_at + timedelta(days=1)
+
+    return (
+        db.query(FoodLog, Food)
+        .join(Food, Food.id == FoodLog.food_id)
+        .filter(FoodLog.user_id == user_id)
+        .filter(FoodLog.created_at >= start_at)
+        .filter(FoodLog.created_at < end_at)
+        .order_by(FoodLog.created_at.desc())
+        .all()
+    )
+
+
+def list_food_logs_by_date_range(db, user_id, start_date: date, end_date: date):
+    start_at = datetime.combine(start_date, time.min, tzinfo=timezone.utc)
+    end_at = datetime.combine(end_date, time.min, tzinfo=timezone.utc) + timedelta(days=1)
 
     return (
         db.query(FoodLog, Food)

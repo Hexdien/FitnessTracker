@@ -8,26 +8,21 @@
   </head>
   <body>
     <div class="page-shell">
-      <header class="hero">
+      <header class="app-header">
         <div>
           <p class="eyebrow">Fitness Tracker</p>
-          <h1>Diário alimentar e treino em uma única interface.</h1>
-          <p class="hero-copy">
-            MVP operacional para validar cadastro, lançamento diário e evolução
-            futura para autenticação, treino avançado e testes de segurança.
-          </p>
+          <h1>Diário alimentar e treino</h1>
         </div>
-        <div class="hero-card">
-          <span>Escopo atual</span>
-          <strong>Food + Workout</strong>
-          <p>Catálogo de alimentos, catálogo de exercícios e registro visual de sessões.</p>
-        </div>
+        <nav class="app-nav" aria-label="Navegação principal">
+          <button class="nav-button active" type="button" data-view-target="nutrition">Nutrição</button>
+          <button class="nav-button" type="button" data-view-target="workout">Treino</button>
+        </nav>
       </header>
 
       <section id="status-banner" class="status-banner hidden"></section>
 
       <main class="page-sections">
-        <section class="section-block">
+        <section id="view-nutrition" class="section-block app-view active">
           <div class="section-title">
             <h2>Nutrição</h2>
             <p>Gerencie alimentos base e registre consumo diário.</p>
@@ -48,20 +43,24 @@
                     <input id="food-name" name="name" type="text" placeholder="Ex.: Arroz branco" required>
                   </label>
                   <label>
-                    <span>Calorias / 100g</span>
-                    <input id="food-calories" name="calories" type="number" min="0.01" step="0.01" required>
+                    <span>Porção base</span>
+                    <input id="food-base-quantity" name="base_quantity" type="number" min="0.01" step="0.01" value="100" required>
                   </label>
                   <label>
-                    <span>Carboidratos / 100g</span>
-                    <input id="food-carbs" name="carbs" type="number" min="0.01" step="0.01" required>
+                    <span>Calorias / porção</span>
+                    <input id="food-calories" name="calories" type="number" min="0" step="0.01" required>
                   </label>
                   <label>
-                    <span>Proteínas / 100g</span>
-                    <input id="food-protein" name="protein" type="number" min="0.01" step="0.01" required>
+                    <span>Carboidratos / porção</span>
+                    <input id="food-carbs" name="carbs" type="number" min="0" step="0.01" required>
                   </label>
                   <label>
-                    <span>Lipídios / 100g</span>
-                    <input id="food-lipids" name="lipids" type="number" min="0.01" step="0.01" required>
+                    <span>Proteínas / porção</span>
+                    <input id="food-protein" name="protein" type="number" min="0" step="0.01" required>
+                  </label>
+                  <label>
+                    <span>Lipídios / porção</span>
+                    <input id="food-lipids" name="lipids" type="number" min="0" step="0.01" required>
                   </label>
                 </div>
 
@@ -76,6 +75,7 @@
                   <thead>
                     <tr>
                       <th>Alimento</th>
+                      <th>Base</th>
                       <th>Kcal</th>
                       <th>C</th>
                       <th>P</th>
@@ -99,10 +99,19 @@
 
               <form id="food-log-form" class="stacked-form">
                 <input type="hidden" id="food-log-id">
+                <input type="hidden" id="food-log-food-id">
                 <div class="field-grid compact">
                   <label>
                     <span>Alimento</span>
-                    <select id="food-log-food-id" required></select>
+                    <input
+                      id="food-log-food-name"
+                      type="text"
+                      list="food-options"
+                      placeholder="Digite para buscar"
+                      autocomplete="off"
+                      required
+                    >
+                    <datalist id="food-options"></datalist>
                   </label>
                   <label>
                     <span>Quantidade (g)</span>
@@ -151,9 +160,31 @@
               </div>
             </section>
           </div>
+
+          <section class="panel panel-wide">
+            <div class="panel-head">
+              <div>
+                <h3>Histórico alimentar</h3>
+                <p>Resumo por dia com detalhes de alimentos e horários consumidos.</p>
+              </div>
+              <form id="food-history-form" class="history-filter">
+                <label>
+                  <span>Início</span>
+                  <input id="history-start-date" type="date" required>
+                </label>
+                <label>
+                  <span>Fim</span>
+                  <input id="history-end-date" type="date" required>
+                </label>
+                <button class="ghost-button" type="submit">Atualizar</button>
+              </form>
+            </div>
+
+            <div id="food-history-list" class="history-list"></div>
+          </section>
         </section>
 
-        <section class="section-block">
+        <section id="view-workout" class="section-block app-view">
           <div class="section-title">
             <h2>Treino</h2>
             <p>Crie exercícios e monte sessões com séries, repetições e carga.</p>
