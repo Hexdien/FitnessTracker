@@ -109,7 +109,9 @@ def list_food_logs_by_date(db, user_id, target_date: date):
 
 def list_food_logs_by_date_range(db, user_id, start_date: date, end_date: date):
     start_at = datetime.combine(start_date, time.min, tzinfo=timezone.utc)
-    end_at = datetime.combine(end_date, time.min, tzinfo=timezone.utc) + timedelta(days=1)
+    end_at = datetime.combine(end_date, time.min, tzinfo=timezone.utc) + timedelta(
+        days=1
+    )
 
     return (
         db.query(FoodLog, Food)

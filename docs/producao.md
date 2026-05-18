@@ -1,28 +1,37 @@
-# Produção local com Docker Compose
+# Setups: dev e producao
 
-Este projeto foi preparado para rodar em Docker Compose no servidor pessoal da rede local, usando um PostgreSQL que ja existe no servidor.
+Este projeto roda em dois modos:
 
-## Ambientes
+- **Dev local**: venv na propria maquina com SQLite. Sem Docker.
+- **Producao**: Docker Compose no servidor pessoal da rede local, usando o PostgreSQL ja existente no servidor.
 
-### Desenvolvimento com Postgres em container
+## Dev local (venv + SQLite)
 
-Use quando quiser testar localmente com um banco descartavel:
+A configuracao padrao em `app/config/config.py` ja aponta para `sqlite:///fitness.db` quando nenhuma variavel de ambiente esta definida, entao nao e preciso criar nenhum `.env` para rodar localmente.
 
 ```bash
-docker compose -f compose.dev.yml up --build
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+venv/bin/alembic upgrade head
+venv/bin/python scripts/seed_foods.py
+venv/bin/flask --app app.app:create_app run
 ```
 
-A app sobe em:
+A app sobe em `http://127.0.0.1:5000` e usa o arquivo `fitness.db` na raiz do projeto (ignorado pelo Git).
 
-```text
-http://127.0.0.1:5000
+Reset do banco de dev:
+
+```bash
+rm -f fitness.db
+venv/bin/alembic upgrade head
+venv/bin/python scripts/seed_foods.py
 ```
 
-O `compose.dev.yml` cria um Postgres local, aplica migrations e roda o seed de alimentos automaticamente.
+## Producao (Docker Compose + Postgres)
 
-### Produção no servidor
-
-O `compose.prod.yml` nao cria Postgres. Ele espera receber `DATABASE_URL` apontando para o PostgreSQL ja existente no servidor.
+O `compose.prod.yml` sobe apenas o servico `app`. Ele espera `DATABASE_URL` apontando para o PostgreSQL ja existente no servidor.
 
 No servidor, crie `.env.production` a partir de `.env.example`:
 
@@ -30,7 +39,9 @@ No servidor, crie `.env.production` a partir de `.env.example`:
 cp .env.example .env.production
 ```
 
-Exemplo minimo:
+Edite `DATABASE_URL` com host/usuario/senha reais.
+
+Exemplo minimo de `.env.production`:
 
 ```env
 APP_HOST_PORT=8000
@@ -96,7 +107,7 @@ Porem, com apenas um container servindo diretamente a porta da aplicacao, ainda 
 
 Enquanto o projeto ainda esta em MVP e rodando na rede local, o fluxo atual e suficiente para deploy controlado com baixa janela de indisponibilidade.
 
-## Comandos uteis
+## Comandos uteis (producao)
 
 Aplicar migrations e seed em producao:
 
