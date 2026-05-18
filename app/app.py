@@ -1,3 +1,5 @@
+import os
+
 from flask import Flask, render_template
 from werkzeug.exceptions import HTTPException
 
@@ -29,9 +31,12 @@ def create_app():
     def handle_unexpected_exception(_error):
         return {"error": "Erro interno da aplicação"}, 500
 
-    # Tabelas temporárias
-    # Utilizar migrations posteriormente
-    Base.metadata.create_all(bind=engine)
+    if os.getenv("AUTO_CREATE_TABLES") == "1":
+        Base.metadata.create_all(bind=engine)
+
+    @app.route("/health")
+    def health():
+        return {"status": "ok"}, 200
 
     @app.route("/")
     def home():
