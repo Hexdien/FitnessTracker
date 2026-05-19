@@ -112,20 +112,25 @@ def seed_foods():
     updated = 0
 
     with SessionLocal() as db:
-        dev_user = db.query(Users).filter(Users.id == 1).first()
+        dev_user = db.query(Users).filter(Users.username == "local").first()
+
+        existing_foods = {food.name: food for food in db.query(Food).all()}
+
         if dev_user is None:
             db.add(
                 Users(
-                    id=1,
                     username="local",
                     role="USER",
                     created_at=datetime.now(timezone.utc),
                 )
             )
+            db.flush()
 
         for name, base_quantity, calories, carbs, protein, lipids in FOODS:
-            normalized_name = name.strip()
-            food = db.query(Food).filter(Food.name == normalized_name).first()
+            normalized_name = name.strip().lower()
+
+            food = existing_foods.get(normalized_name)
+
             values = {
                 "base_quantity": decimal_from_pt_br(base_quantity),
                 "calories": decimal_from_pt_br(calories),
@@ -141,6 +146,7 @@ def seed_foods():
 
             for field_name, value in values.items():
                 setattr(food, field_name, value)
+
             updated += 1
 
         db.commit()
