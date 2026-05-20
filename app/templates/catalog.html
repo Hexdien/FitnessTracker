@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Catálogo · Fitness Tracker{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/catalog.css') }}">
+{% endblock %}
+
+{% block content %}
+  <section class="section-block">
+    <div class="section-title">
+      <h2>Catálogo de alimentos</h2>
+      <p>Cadastre e mantenha a base de alimentos usada no registro diário.</p>
+    </div>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h3>Novo alimento</h3>
+        <button id="food-form-reset" class="ghost-button" type="button">Limpar</button>
+      </div>
+
+      <form id="food-form" class="stacked-form">
+        <input type="hidden" id="food-id">
+        <div class="field-grid">
+          <label>
+            <span>Nome</span>
+            <input id="food-name" name="name" type="text" placeholder="Ex.: Arroz branco" required>
+          </label>
+          <label>
+            <span>Porção base (g)</span>
+            <input id="food-base-quantity" name="base_quantity" type="number" min="0.01" step="0.01" value="100" required>
+          </label>
+          <label>
+            <span>Calorias / porção</span>
+            <input id="food-calories" name="calories" type="number" min="0" step="0.01" required>
+          </label>
+          <label>
+            <span>Carboidratos / porção</span>
+            <input id="food-carbs" name="carbs" type="number" min="0" step="0.01" required>
+          </label>
+          <label>
+            <span>Proteínas / porção</span>
+            <input id="food-protein" name="protein" type="number" min="0" step="0.01" required>
+          </label>
+          <label>
+            <span>Lipídios / porção</span>
+            <input id="food-lipids" name="lipids" type="number" min="0" step="0.01" required>
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button id="food-submit" class="primary-button" type="submit">Salvar alimento</button>
+          <button id="food-cancel" class="ghost-button hidden" type="button">Cancelar edição</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h3>Alimentos cadastrados</h3>
+          <p id="food-count" class="muted-line">0 alimentos</p>
+        </div>
+        <label class="search-field">
+          <span>Buscar</span>
+          <input id="food-search" type="search" placeholder="Filtrar por nome">
+        </label>
+      </div>
+
+      <div class="table-wrap">
+        <table class="food-table">
+          <thead>
+            <tr>
+              <th>Alimento</th>
+              <th>Base</th>
+              <th>Kcal</th>
+              <th>C</th>
+              <th>P</th>
+              <th>L</th>
+              <th class="col-actions"></th>
+            </tr>
+          </thead>
+          <tbody id="food-table-body"></tbody>
+        </table>
+      </div>
+    </section>
+  </section>
+{% endblock %}
+
+{% block scripts %}
+  <script type="module" src="{{ url_for('static', filename='js/catalog.js') }}"></script>
+{% endblock %}
