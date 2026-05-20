@@ -20,6 +20,10 @@ import app.models.workout_set
 def create_app():
     app = Flask(__name__)
 
+    if app.debug or os.getenv("FLASK_DEBUG") == "1":
+        app.config["TEMPLATES_AUTO_RELOAD"] = True
+        app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
+
     app.register_blueprint(food_bp)
     app.register_blueprint(workout_bp)
 
@@ -40,6 +44,14 @@ def create_app():
 
     @app.route("/")
     def home():
-        return render_template("index.html")
+        return render_template("nutrition.html", active_view="nutrition")
+
+    @app.route("/catalog")
+    def catalog():
+        return render_template("catalog.html", active_view="catalog")
+
+    @app.route("/workout")
+    def workout_view():
+        return render_template("workout.html", active_view="workout")
 
     return app
