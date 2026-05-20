@@ -1,3 +1,5 @@
+import os
+
 from flask import Flask, render_template
 from werkzeug.exceptions import HTTPException
 
@@ -18,6 +20,10 @@ import app.models.workout_set
 def create_app():
     app = Flask(__name__)
 
+    if app.debug or os.getenv("FLASK_DEBUG") == "1":
+        app.config["TEMPLATES_AUTO_RELOAD"] = True
+        app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
+
     app.register_blueprint(food_bp)
     app.register_blueprint(workout_bp)
 
@@ -29,12 +35,23 @@ def create_app():
     def handle_unexpected_exception(_error):
         return {"error": "Erro interno da aplicação"}, 500
 
-    # Tabelas temporárias
-    # Utilizar migrations posteriormente
-    Base.metadata.create_all(bind=engine)
+    if os.getenv("AUTO_CREATE_TABLES") == "1":
+        Base.metadata.create_all(bind=engine)
+
+    @app.route("/health")
+    def health():
+        return {"status": "ok"}, 200
 
     @app.route("/")
     def home():
-        return render_template("index.html")
+        return render_template("nutrition.html", active_view="nutrition")
+
+    @app.route("/catalog")
+    def catalog():
+        return render_template("catalog.html", active_view="catalog")
+
+    @app.route("/workout")
+    def workout_view():
+        return render_template("workout.html", active_view="workout")
 
     return app

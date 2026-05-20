@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Treino · Fitness Tracker{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/workout.css') }}">
+{% endblock %}
+
+{% block content %}
+  <section class="section-block">
+    <div class="section-title">
+      <h2>Treino</h2>
+      <p>Crie exercícios e monte sessões com séries, repetições e carga.</p>
+    </div>
+
+    <div class="dashboard">
+      <section class="panel">
+        <div class="panel-head">
+          <h3>Catálogo de exercícios</h3>
+        </div>
+
+        <form id="exercise-form" class="stacked-form">
+          <div class="field-grid">
+            <label>
+              <span>Nome</span>
+              <input id="exercise-name" type="text" placeholder="Ex.: Supino reto" required>
+            </label>
+            <label>
+              <span>Grupos musculares</span>
+              <input id="exercise-muscle-groups" type="text" placeholder="Peito, tríceps, ombro" required>
+            </label>
+          </div>
+
+          <div class="form-actions">
+            <button class="primary-button" type="submit">Salvar exercício</button>
+          </div>
+        </form>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Exercício</th>
+                <th>Grupos musculares</th>
+              </tr>
+            </thead>
+            <tbody id="exercise-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h3>Sessão de treino</h3>
+          <label class="date-filter">
+            <span>Data</span>
+            <input id="workout-date-filter" type="date">
+          </label>
+        </div>
+
+        <form id="workout-session-form" class="stacked-form">
+          <div class="form-actions form-actions-inline">
+            <button id="add-execution-button" class="ghost-button" type="button">Adicionar exercício</button>
+            <button class="primary-button" type="submit">Salvar sessão</button>
+          </div>
+          <div id="workout-execution-list" class="execution-list"></div>
+        </form>
+
+        <div class="workout-session-list" id="workout-session-list"></div>
+      </section>
+    </div>
+  </section>
+
+  <template id="execution-template">
+    <article class="execution-card">
+      <div class="execution-head">
+        <label>
+          <span>Exercício</span>
+          <select class="execution-exercise-select"></select>
+        </label>
+        <button class="action-button danger execution-remove-button" type="button">Remover</button>
+      </div>
+
+      <div class="sets-list"></div>
+
+      <button class="ghost-button add-set-button" type="button">Adicionar série</button>
+    </article>
+  </template>
+
+  <template id="set-template">
+    <div class="set-row">
+      <label>
+        <span>Reps</span>
+        <input class="set-reps-input" type="number" min="1" step="1" required>
+      </label>
+      <label>
+        <span>Peso (kg)</span>
+        <input class="set-weight-input" type="number" min="0" step="0.01" required>
+      </label>
+      <button class="action-button danger remove-set-button" type="button">Excluir</button>
+    </div>
+  </template>
+{% endblock %}
+
+{% block scripts %}
+  <script type="module" src="{{ url_for('static', filename='js/workout.js') }}"></script>
+{% endblock %}

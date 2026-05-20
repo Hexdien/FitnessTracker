@@ -9,6 +9,7 @@ from app.services.food_service import (
     create_food_log,
     delete_food,
     delete_food_log,
+    list_food_logs_by_date_range,
     list_food_logs_by_date,
     list_foods,
     update_food,
@@ -48,6 +49,25 @@ def _parse_positive_decimal(data, field_name):
 
     if parsed_value <= 0:
         raise ValueError(f"{field_name} deve ser maior que zero")
+
+    return parsed_value
+
+
+def _parse_non_negative_decimal(data, field_name):
+    if field_name not in data:
+        raise ValueError(f"{field_name} é obrigatório")
+
+    value = data[field_name]
+    if isinstance(value, bool):
+        raise TypeError(f"{field_name} deve ser numérico")
+
+    try:
+        parsed_value = Decimal(str(value))
+    except (InvalidOperation, ValueError):
+        raise TypeError(f"{field_name} deve ser numérico") from None
+
+    if parsed_value < 0:
+        raise ValueError(f"{field_name} não pode ser negativo")
 
     return parsed_value
 
@@ -103,6 +123,7 @@ def _serialize_food(food):
     return {
         "id": food.id,
         "name": food.name,
+        "base_quantity": float(food.base_quantity),
         "calories": float(food.calories),
         "carbs": float(food.carbs),
         "protein": float(food.protein),
@@ -124,6 +145,32 @@ def _serialize_food_log(food_log, food_name=None):
     }
 
 
+def _serialize_food_log_history(rows):
+    grouped = {}
+
+    for food_log, food in rows:
+        day_key = food_log.created_at.date().isoformat()
+        if day_key not in grouped:
+            grouped[day_key] = {
+                "date": day_key,
+                "totals": {
+                    "calories": 0,
+                    "protein": 0,
+                    "carbs": 0,
+                    "lipids": 0,
+                },
+                "logs": [],
+            }
+
+        grouped[day_key]["totals"]["calories"] += float(food_log.calories)
+        grouped[day_key]["totals"]["protein"] += float(food_log.protein)
+        grouped[day_key]["totals"]["carbs"] += float(food_log.carbs)
+        grouped[day_key]["totals"]["lipids"] += float(food_log.lipids)
+        grouped[day_key]["logs"].append(_serialize_food_log(food_log, food.name))
+
+    return list(grouped.values())
+
+
 def _parse_food_fields(data, partial):
     fields = {}
 
@@ -132,9 +179,14 @@ def _parse_food_fields(data, partial):
     elif not partial:
         raise ValueError("name é obrigatório")
 
+    if "base_quantity" in data:
+        fields["base_quantity"] = _parse_positive_decimal(data, "base_quantity")
+    elif not partial:
+        raise ValueError("base_quantity é obrigatório")
+
     for field_name in ("calories", "carbs", "protein", "lipids"):
         if field_name in data:
-            fields[field_name] = _parse_positive_decimal(data, field_name)
+            fields[field_name] = _parse_non_negative_decimal(data, field_name)
         elif not partial:
             raise ValueError(f"{field_name} é obrigatório")
 
@@ -257,6 +309,26 @@ def list_food_logs_route():
         return _error_response(str(error), 400)
     except Exception:
         return _error_response("Não foi possível listar os registros", 422)
+
+
+@food_bp.route("/food-log/history", methods=["GET"])
+def list_food_log_history_route():
+    try:
+        start_date = _parse_iso_date(request.args.get("start_date"))
+        end_date = _parse_iso_date(request.args.get("end_date"))
+
+        if end_date < start_date:
+            raise ValueError("end_date deve ser maior ou igual a start_date")
+
+        with get_db() as db:
+            user_id = 1
+            rows = list_food_logs_by_date_range(db, user_id, start_date, end_date)
+
+        return jsonify(_serialize_food_log_history(rows)), 200
+    except ValueError as error:
+        return _error_response(str(error), 400)
+    except Exception:
+        return _error_response("Não foi possível listar o histórico alimentar", 422)
 
 
 @food_bp.route("/food-log", methods=["POST"])

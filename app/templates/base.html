@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Fitness Tracker{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    {% block extra_css %}{% endblock %}
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="app-header">
+        <div>
+          <p class="eyebrow">Fitness Tracker</p>
+          <h1>Diário alimentar e treino</h1>
+        </div>
+        <nav class="app-nav" aria-label="Navegação principal">
+          <a class="nav-button {% if active_view == 'nutrition' %}active{% endif %}" href="{{ url_for('home') }}">Nutrição</a>
+          <a class="nav-button {% if active_view == 'catalog' %}active{% endif %}" href="{{ url_for('catalog') }}">Catálogo</a>
+          <a class="nav-button {% if active_view == 'workout' %}active{% endif %}" href="{{ url_for('workout_view') }}">Treino</a>
+        </nav>
+      </header>
+
+      <section id="status-banner" class="status-banner hidden"></section>
+
+      <main class="page-sections">
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+
+    {% block scripts %}{% endblock %}
+  </body>
+</html>
