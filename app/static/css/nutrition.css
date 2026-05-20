@@ -1,0 +1,158 @@
+/* ---------- Summary strip ---------- */
+.summary-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.summary-strip article {
+  border-radius: 20px;
+  padding: 14px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(244, 239, 230, 0.9));
+  border: 1px solid var(--line);
+}
+
+.summary-strip span {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.summary-strip strong {
+  font-size: 1.25rem;
+}
+
+/* ---------- Tabela do registro: layout fixo, sem scroll horizontal ---------- */
+.food-log-table {
+  table-layout: fixed;
+}
+
+.food-log-table th,
+.food-log-table td {
+  overflow: hidden;
+}
+
+/* horário */ 
+.food-log-table th:nth-child(1),
+.food-log-table td:nth-child(1) {
+  width: 80px;
+}
+
+.food-log-table th:nth-child(2),
+.food-log-table td:nth-child(2) {
+  width: auto;
+  white-space: normal;
+  word-break: break-word;
+}
+
+ /* Qtd, Kcal, Carb, Prot, Lip: numéricas, alinhadas à direita */
+  .food-log-table th:nth-child(n+3):nth-child(-n+7),
+  .food-log-table td:nth-child(n+3):nth-child(-n+7) {
+    width: 120px;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+/* Ações */
+  .food-log-table th:last-child,
+  .food-log-table td:last-child {
+    width: 100px;
+  }
+
+/* ---------- Histórico ---------- */
+.history-filter {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(150px, 1fr)) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.history-list {
+  display: grid;
+  gap: 12px;
+}
+
+.history-day {
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.48);
+}
+
+.history-day summary {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) repeat(4, minmax(90px, auto));
+  gap: 12px;
+  align-items: center;
+  padding: 14px 16px;
+  cursor: pointer;
+}
+
+.history-day summary::marker {
+  color: var(--accent-dark);
+}
+
+.history-date {
+  font-weight: 700;
+}
+
+.history-metric {
+  display: grid;
+  gap: 3px;
+  text-align: right;
+}
+
+.history-metric span {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.history-log-list {
+  display: grid;
+  gap: 0;
+  padding: 0 16px 14px;
+}
+
+.history-log-row {
+  display: grid;
+  grid-template-columns: 80px minmax(160px, 1fr) repeat(2, minmax(80px, auto));
+  gap: 12px;
+  padding: 11px 0;
+  border-top: 1px solid var(--line);
+  align-items: center;
+}
+
+.date-filter {
+  min-width: 180px;
+}
+
+@media (max-width: 720px) {
+  .summary-strip {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .history-filter,
+  .history-log-row {
+    grid-template-columns: 1fr;
+  }
+
+  .history-day summary {
+    grid-template-columns: 1fr;
+  }
+
+  .history-metric {
+    text-align: left;
+  }
+
+  .food-log-table th:nth-child(1),
+  .food-log-table td:nth-child(1) {
+    width: 60px;
+  }
+
+  .food-log-table th:nth-child(5),
+  .food-log-table td:nth-child(5) {
+    width: 72px;
+  }
+}

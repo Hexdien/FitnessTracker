@@ -1,0 +1,35 @@
+/* Tabela do catálogo: layout fixo para evitar overflow ao crescer */
+.food-table {
+  table-layout: fixed;
+}
+
+.food-table th,
+.food-table td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.food-table th:nth-child(1),
+.food-table td:nth-child(1) {
+  width: auto;
+  white-space: normal;
+}
+
+.food-table th:nth-child(n+2):nth-child(-n+6),
+.food-table td:nth-child(n+2):nth-child(-n+6) {
+  width: 68px;
+  text-align: right;
+}
+
+.food-table th:last-child,
+.food-table td:last-child {
+  width: 90px;
+}
+
+@media (max-width: 720px) {
+  .food-table th:nth-child(n+2):nth-child(-n+6),
+  .food-table td:nth-child(n+2):nth-child(-n+6) {
+    width: 56px;
+  }
+}
